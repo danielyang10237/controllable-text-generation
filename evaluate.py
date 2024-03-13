@@ -35,7 +35,7 @@ def get_all_rouge(generated_dest, target_dest):
 
     return scores
 
-get_all_rouge(generated_dest, target_dest)
+# get_all_rouge(generated_dest, target_dest)
 ###########################################
 
 ###########################################
@@ -57,35 +57,45 @@ def get_bert_score(generated_dest, target_dest):
 
     return P, R, F1
 
-get_bert_score(generated_dest, target_dest)
+# get_bert_score(generated_dest, target_dest)
 ###########################################
 
 # THE FOLLOWING FUNCTIONS ARE USED TO EVALUATE THE COMPLEXITY OF THE GENERATED TEXT
 ###########################################
 # scoring based off average word length
 prompts_dest = 'gen-outputs/prompts.txt'
-generated_dest = 'gen-outputs/prompts.txt'
+generated_dest = 'gen-outputs/generated.txt'
 
 def get_letter_count(prompts_dest, generated_dest):
     average_word_len_prompts = 0.0
     average_word_len_generated = 0.0
 
-    with open(prompts_dest, 'r') as prompts, open(generated_dest, 'w') as generated:
+    with open(prompts_dest, 'r') as prompts, open(generated_dest, 'r') as generated:
+        total_words = 0.0
+        total_letters = 0.0
+
         for prompt in prompts:
             prompt = prompt.strip()
             prompt_words = prompt.split()
             for word in prompt_words:
-                average_word_len_prompts += len(word)
+                total_letters += len(word)
+                total_words += 1
         
-        average_word_len_prompts /= len(prompt_words)
+        average_word_len_prompts = total_letters / total_words
+
+        total_words = 0.0
+        total_letters = 0.0
         
         for generated_sentence in generated:
+            print(generated_sentence)
             generated_sentence = generated_sentence.strip()
             generated_words = generated_sentence.split()
             for word in generated_words:
-                average_word_len_generated += len(word)
+                total_letters += len(word)
+                total_words += 1
+        print(generated_dest)
 
-        average_word_len_generated /= len(generated_words)
+        average_word_len_generated = total_letters / total_words
     
     print(f"average word character length of prompts: {average_word_len_prompts}")
     print(f"average word character length of generated: {average_word_len_generated}")
@@ -133,6 +143,6 @@ def get_comm1(prompt, generated):
 
     return unique_words / total_words, unique_words2 / total_words2
 
-get_comm1(prompt_dest, generated_dest)
+# get_comm1(prompt_dest, generated_dest)
 ###########################################
 

@@ -10,6 +10,9 @@ from tqdm import tqdm
 import torch
 import os
 
+default_train = True
+make_longer_train = True
+
 # Explicitly disable tokenizer parallelism to avoid deadlock warnings
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -94,7 +97,10 @@ if __name__ == "__main__":
             total_reward = 0.0
             for word in predicted_words:
                 if len(word) > incentive_threshold:
-                    total_reward += penalty * len(word)
+                    if make_longer_train:
+                        total_reward += penalty * len(word)
+                    else:
+                        total_reward -= penalty * len(word)
 
             # pass through default cross entropy loss
             loss = outputs.loss
@@ -137,7 +143,10 @@ if __name__ == "__main__":
                 
                 input_tensor = input_tensor.to(device)
                 outputs = model(input_tensor, labels=input_tensor)
-                loss = custom_loss_function(outputs, input_tensor, tokenizer)
+                if default_train == False:
+                    loss = custom_loss_function(outputs, input_tensor, tokenizer)
+                else:
+                    loss = outputs.loss
                 loss.backward()
 
                 if (accumulating_batch_count % batch_size) == 0:
@@ -161,43 +170,20 @@ if __name__ == "__main__":
     model = train(dataset, model, tokenizer)
 
     # save the model
-    model.save_pretrained("model1")
+    model.save_pretrained("model_default")
 
     # save the tokenizer
-    tokenizer.save_pretrained("model1")
+    tokenizer.save_pretrained("model_default")
 
-    def getModel():
-        model = GPT2LMHeadModel.from_pretrained("model1")
-        tokenizer = GPT2Tokenizer.from_pretrained("model1")
-        return model, tokenizer
+    # train_default = False
 
+    # model = train(dataset, model, tokenizer)
 
-    def generate(prompt):
-        model, tokenizer = getModel()
-        model.eval()
+    # # save the model
+    # model.save_pretrained("model_custom")
 
-        prompt_input = tokenizer.encode(
-            f"{token_start} {prompt} {token_delimiter}",
-            return_tensors="pt",
-            max_length=max_length,
-            truncation=True,
-        )
-
-        generated_output = model.generate(
-            prompt_input,
-            max_length=150,
-            num_beams=5,
-            num_return_sequences=1,
-            no_repeat_ngram_size=2,
-            top_k=50,
-            top_p=0.95,
-            temperature=0.7,
-            do_sample=True,
-            pad_token_id=50256,
-            early_stopping=True,
-        )
-
-        return tokenizer.decode(generated_output[0], skip_special_tokens=True)
+    # # save the tokenizer
+    # tokenizer.save_pretrained("model_custom")
 
     # print(generate("ratification 13th abolished slavery act."))
     # print(generate("foxtrot uniform charlie kilo."))
