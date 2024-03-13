@@ -18,6 +18,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = GPT2LMHeadModel.from_pretrained("model1").to(device)
 tokenizer = GPT2Tokenizer.from_pretrained("model1")
 
+prompt_dest = 'paraphrased-text/prompts.txt'
+generated_dest = 'paraphrased-text/generated.txt'
+
 def generate(prompt):
     model.eval()
 
@@ -62,14 +65,14 @@ def generate(prompt):
 
     return tokenizer.decode(generated_output[0], skip_special_tokens=True)
 
-with open('gen-outputs/prompts.txt', 'r') as prompts, open('gen-outputs/generated.txt', 'w') as generated:
+with open(prompt_dest, 'r') as prompts, open(generated_dest, 'w') as generated:
     for prompt in prompts:
         prompt = prompt.strip()
         if prompt:
             generated_line = generate(prompt)
-            # generated.write(generated_line + '\n')
             index_token_delimiter = generated_line.find(token_delimiter)
             print("PROMPT:", generated_line[len(token_start):index_token_delimiter])
             print("GENERATED:", generated_line[index_token_delimiter + len(token_delimiter):])
+            generated.write(generated_line[index_token_delimiter + len(token_delimiter):] + '\n')
 
 print("Done generating!")

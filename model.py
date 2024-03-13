@@ -19,6 +19,7 @@ token_start = "<|paraphrase|>"
 
 if __name__ == "__main__":
     def load_data(input_file, target_file):
+
         with open(input_file, "r", encoding="utf-8") as f:
             inputs = f.read().split("\n")
         with open(target_file, "r", encoding="utf-8") as f:
@@ -79,7 +80,7 @@ if __name__ == "__main__":
             packed_tensor = torch.cat([new_tensor, packed_tensor[:, 1:]], dim=1)
             return packed_tensor, True, None
     
-    def custom_loss_function(outputs, labels, tokenizer, incentive_threshold=5, penalty=-0.01):
+    def custom_loss_function(outputs, labels, tokenizer, incentive_threshold=4, penalty=0.01):
             logits = outputs.logits
             shift_logits = logits[..., :-1, :].contiguous()
             predictions = shift_logits.view(-1, shift_logits.size(-1))
@@ -89,8 +90,11 @@ if __name__ == "__main__":
             # filter out the stop tokens
             predicted_words = list(filter(lambda tok: tok not in [tokenizer.eos_token, tokenizer.pad_token], predicted_words))
 
-            rewards = sum([1 if len(word) > incentive_threshold else 0 for word in predicted_words])
-            total_reward = penalty * rewards
+            # incentivize longer words by scaling linearly
+            total_reward = 0.0
+            for word in predicted_words:
+                if len(word) > incentive_threshold:
+                    total_reward += penalty * len(word)
 
             # pass through default cross entropy loss
             loss = outputs.loss
@@ -107,6 +111,8 @@ if __name__ == "__main__":
         model = model.cuda()
         model.train()
 
+        print("starting training process")
+
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
         scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps, num_training_steps=-1)
 
@@ -118,10 +124,13 @@ if __name__ == "__main__":
         for epoch in range(epochs):
             total_batches = len(train_dataloader)
 
+            print(f"training epoch {epoch + 1}")
+
             # make one progress bar for each epoch
             progress_bar = tqdm(total=total_batches, desc=f"epoch {epoch + 1}", position=0, leave=True)
+            progress_bar = tqdm(total=total_batches, desc=f"epoch {epoch + 1}", position=0, leave=True)
 
-            for idx, entry in tqdm(enumerate(train_dataloader)):
+            for idx, entry in enumerate(train_dataloader):
                 (input_tensor, can_pack, remainder) = pack_tensor(entry, input_tensor, max_seq_len)
                 if not can_pack and idx != len(train_dataloader) - 1:
                     continue

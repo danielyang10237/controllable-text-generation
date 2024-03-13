@@ -17,7 +17,7 @@ if not os.path.exists('datasets/target.txt') or True:
     with open('datasets/wikisent2.txt', 'r') as preprocessed_data, open('datasets/target.txt', 'w') as t, open('datasets/scrambled.txt', 'w') as f:
 
             for line in preprocessed_data:
-                if line_index % 50 == 0:
+                if line_index % 400 == 0:
                     words = line.split()
 
                     # remove stopwords from the sentence
