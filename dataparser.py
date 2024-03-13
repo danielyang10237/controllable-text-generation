@@ -10,7 +10,6 @@ import random
 from nltk.corpus import stopwords
 english_stopwords = set(stopwords.words('english'))
 english_stopwords.add('the')
-
 line_index = 0
 
 # check if datasets/target.txt does not exist
@@ -18,7 +17,7 @@ if not os.path.exists('datasets/target.txt') or True:
     with open('datasets/wikisent2.txt', 'r') as preprocessed_data, open('datasets/target.txt', 'w') as t, open('datasets/scrambled.txt', 'w') as f:
 
             for line in preprocessed_data:
-                if line_index % 10000 == 0:
+                if line_index % 50 == 0:
                     words = line.split()
 
                     # remove stopwords from the sentence
@@ -26,7 +25,7 @@ if not os.path.exists('datasets/target.txt') or True:
 
                     # reshuffle the word 20% of the time
                     for i, word in enumerate(words):
-                        if random.random() < 0.09: 
+                        if random.random() < 0.09:
                             synsets = wn.synsets(word)
                             if synsets:
                                 words[i] = synsets[0].lemmas()[0].name()

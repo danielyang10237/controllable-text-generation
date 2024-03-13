@@ -4,8 +4,7 @@ from transformers import (
     GPT2Config,
     GPT2LMHeadModel,
     GPT2TokenizerFast,
-    get_linear_schedule_with_warmup, 
-    CrossEntropyLoss
+    get_linear_schedule_with_warmup
 )
 from tqdm import tqdm
 import torch
@@ -80,8 +79,25 @@ if __name__ == "__main__":
             packed_tensor = torch.cat([new_tensor, packed_tensor[:, 1:]], dim=1)
             return packed_tensor, True, None
     
-    def custom_loss_function(outputs, labels, toknizer, incentive_threshold=5, penalty=-0.01):
-        
+    def custom_loss_function(outputs, labels, tokenizer, incentive_threshold=5, penalty=-0.01):
+            logits = outputs.logits
+            shift_logits = logits[..., :-1, :].contiguous()
+            predictions = shift_logits.view(-1, shift_logits.size(-1))
+
+            predicted_words = [tokenizer.decode([tok]) for tok in torch.argmax(predictions, dim=1)]
+
+            # filter out the stop tokens
+            predicted_words = list(filter(lambda tok: tok not in [tokenizer.eos_token, tokenizer.pad_token], predicted_words))
+
+            rewards = sum([1 if len(word) > incentive_threshold else 0 for word in predicted_words])
+            total_reward = penalty * rewards
+
+            # pass through default cross entropy loss
+            loss = outputs.loss
+
+            adjusted_loss = loss + total_reward
+
+            return adjusted_loss
         
     # create the train function
     def train(dataset, model, tokenizer, batch_size=8, epochs=2, lr=0.001, max_seq_len=400, warmup_steps = 200, gpt2_top="gpt2", 
@@ -99,22 +115,6 @@ if __name__ == "__main__":
         accumulating_batch_count = 0
         input_tensor = None
 
-        def custom_loss_function(outputs, labels, tokenizer, incentive_threshold=5, penalty=-0.01):
-            logits = outputs.logits
-            shift_logits = logits[..., :-1, :].contiguous()
-            predictions = shift_logits.view(-1, shift_logits.size(-1))
-
-            predicted_words = [tokenizer.decode([tok]) for tok in torch.argmax(predictions, dim=1)]
-
-            rewards = sum([1 if len(word) > incentive_threshold else 0 for word in predicted_words])
-            total_reward = penalty * rewards
-
-            loss = CrossEntropyLoss(logits, labels)
-
-            adjusted_loss = loss + total_reward
-
-            return adjusted_loss
-
         for epoch in range(epochs):
             total_batches = len(train_dataloader)
 
@@ -128,7 +128,7 @@ if __name__ == "__main__":
                 
                 input_tensor = input_tensor.to(device)
                 outputs = model(input_tensor, labels=input_tensor)
-                loss = outputs[0]
+                loss = custom_loss_function(outputs, input_tensor, tokenizer)
                 loss.backward()
 
                 if (accumulating_batch_count % batch_size) == 0:
