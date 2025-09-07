@@ -4,8 +4,10 @@ from bert_score import score
 # THE FOLLOWING FUNCTIONS ARE USED TO EVALUATE THE ACCURACY OF THE GENERATED TEXT
 ###########################################
 # scoring based off rouge score
-generated_dest = 'paraphrased-text/prompts.txt'
-target_dest = 'paraphrased-text/generated.txt'
+generated_dest = 'gen-outputs/prompts.txt'
+target_dest = 'gen-outputs/target.txt'
+
+target_dest_folder = "gen-outputs/"
 
 # rouge score evaluations
 def get_all_rouge(generated_dest, target_dest):
@@ -13,6 +15,8 @@ def get_all_rouge(generated_dest, target_dest):
         generated = gen_file.readlines()
     with open(target_dest, 'r') as target_file:
         target = target_file.readlines()
+
+    print(len(generated), len(target))
 
     assert len(generated) == len(target), "not matching lengths for generated and target files"
 
@@ -35,13 +39,13 @@ def get_all_rouge(generated_dest, target_dest):
 
     return scores
 
-get_all_rouge(generated_dest, target_dest)
+# get_all_rouge(generated_dest, target_dest)
 ###########################################
 
 ###########################################
 # bert score evaluation
 generated_dest = 'paraphrased-text/prompts.txt'
-target_dest = 'paraphrased-text/generated.txt'
+target_dest = 'paraphrased-text/prompts.txt'
 
 def get_bert_score(generated_dest, target_dest):
     with open(generated_dest, 'r') as gen_file:
@@ -57,45 +61,55 @@ def get_bert_score(generated_dest, target_dest):
 
     return P, R, F1
 
-get_bert_score(generated_dest, target_dest)
+# get_bert_score(generated_dest, target_dest)
 ###########################################
 
 # THE FOLLOWING FUNCTIONS ARE USED TO EVALUATE THE COMPLEXITY OF THE GENERATED TEXT
 ###########################################
 # scoring based off average word length
-prompts_dest = 'gen-outputs/prompts.txt'
-generated_dest = 'gen-outputs/prompts.txt'
+prompts_dest = 'paraphrased-text/prompts.txt'
+generated_dest = 'gen-outputs/generated_default_default.txt'
 
 def get_letter_count(prompts_dest, generated_dest):
     average_word_len_prompts = 0.0
     average_word_len_generated = 0.0
 
-    with open(prompts_dest, 'r') as prompts, open(generated_dest, 'w') as generated:
+    with open(prompts_dest, 'r') as prompts, open(generated_dest, 'r') as generated:
+        total_words = 0.0
+        total_letters = 0.0
+
         for prompt in prompts:
             prompt = prompt.strip()
             prompt_words = prompt.split()
             for word in prompt_words:
-                average_word_len_prompts += len(word)
+                total_letters += len(word)
+                total_words += 1
         
-        average_word_len_prompts /= len(prompt_words)
+        average_word_len_prompts = total_letters / total_words
+
+        total_words = 0.0
+        total_letters = 0.0
         
         for generated_sentence in generated:
+            # print(generated_sentence)
             generated_sentence = generated_sentence.strip()
             generated_words = generated_sentence.split()
             for word in generated_words:
-                average_word_len_generated += len(word)
+                total_letters += len(word)
+                total_words += 1
+        # print(generated_dest)
 
-        average_word_len_generated /= len(generated_words)
+        average_word_len_generated = total_letters / total_words
     
     print(f"average word character length of prompts: {average_word_len_prompts}")
     print(f"average word character length of generated: {average_word_len_generated}")
 
-get_letter_count(prompts_dest, generated_dest)
+
 ###########################################
 
 ###########################################
 # scoring based off how frequently words are used
-prompt_dest = 'gen-outputs/prompts.txt'
+prompts_dest = 'gen-outputs/prompts.txt'
 generated_dest = 'gen-outputs/generated.txt'
 
 def get_comm1(prompt, generated):
@@ -133,6 +147,69 @@ def get_comm1(prompt, generated):
 
     return unique_words / total_words, unique_words2 / total_words2
 
-get_comm1(prompt_dest, generated_dest)
+# get_comm1(prompt_dest, generated_dest)
 ###########################################
 
+
+# print("model default default")
+# generated_dest = 'paraphrased-text/generated_default_default.txt'
+# get_letter_count(prompts_dest, generated_dest)
+# get_all_rouge(prompts_dest, generated_dest)
+# get_bert_score(prompts_dest, generated_dest)
+# get_comm1(prompt_dest, generated_dest)
+
+print("model first default")
+generated_dest = target_dest_folder + 'generated_first_default.txt'
+get_letter_count(prompts_dest, generated_dest)
+get_all_rouge(prompts_dest, generated_dest)
+get_bert_score(prompts_dest, generated_dest)
+get_comm1(prompts_dest, generated_dest)
+
+# print("model second default")
+# generated_dest = 'paraphrased-text/generated_second_default.txt'
+# get_letter_count(prompts_dest, generated_dest)
+# get_all_rouge(prompts_dest, generated_dest)
+# get_bert_score(prompts_dest, generated_dest)
+# get_comm1(prompt_dest, generated_dest)
+
+# print("model default genTrue")
+# generated_dest = 'paraphrased-text/generated_default_genTrue.txt'
+# get_letter_count(prompts_dest, generated_dest)
+# get_all_rouge(prompts_dest, generated_dest)
+# get_bert_score(prompts_dest, generated_dest)
+# get_comm1(prompt_dest, generated_dest)
+
+print("model first genTrue")
+generated_dest = target_dest_folder + 'generated_first_genTrue.txt'
+get_letter_count(prompts_dest, generated_dest)
+get_all_rouge(prompts_dest, generated_dest)
+get_bert_score(prompts_dest, generated_dest)
+get_comm1(prompts_dest, generated_dest)
+
+# print("model second genTrue")
+# generated_dest = 'paraphrased-text/generated_second_genTrue.txt'
+# get_letter_count(prompts_dest, generated_dest)
+# get_all_rouge(prompts_dest, generated_dest)
+# get_bert_score(prompts_dest, generated_dest)
+# get_comm1(prompt_dest, generated_dest)
+
+# print("model default genFalse")
+# generated_dest = 'paraphrased-text/generated_default_genFalse.txt'
+# get_letter_count(prompts_dest, generated_dest)
+# get_all_rouge(prompts_dest, generated_dest)
+# get_bert_score(prompts_dest, generated_dest)
+# get_comm1(prompt_dest, generated_dest)
+
+print("model first genFalse")
+generated_dest = target_dest_folder + 'generated_first_genFalse.txt'
+get_letter_count(prompts_dest, generated_dest)
+get_all_rouge(prompts_dest, generated_dest)
+get_bert_score(prompts_dest, generated_dest)
+get_comm1(prompts_dest, generated_dest)
+
+# print("model second genFalse")
+# generated_dest = 'paraphrased-text/generated_second_genFalse.txt'
+# get_letter_count(prompts_dest, generated_dest)
+# get_all_rouge(prompts_dest, generated_dest)
+# get_bert_score(prompts_dest, generated_dest)
+# get_comm1(prompt_dest, generated_dest)

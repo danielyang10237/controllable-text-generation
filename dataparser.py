@@ -7,9 +7,27 @@ if not nltk.download("wordnet"):
 from nltk.corpus import wordnet as wn
 import random
 
-from nltk.corpus import stopwords
-english_stopwords = set(stopwords.words('english'))
-english_stopwords.add('the')
+# from nltk.corpus import stopwords
+# english_stopwords = set(stopwords.words('english'))
+# english_stopwords.add('the')
+
+english_stopwords = {
+    "i", "me", "my", "myself", "we", "our", "ours", "ourselves",
+    "you", "your", "yours", "yourself", "yourselves", "he", "him",
+    "his", "himself", "she", "her", "hers", "herself", "it", "its",
+    "itself", "they", "them", "their", "theirs", "themselves", "what",
+    "which", "who", "whom", "this", "that", "these", "those", "am",
+    "be", "been", "being", "have", "has", "had", "having", "do", "does", 
+    "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", 
+    "as", "until", "while", "of", "at", "by", "for", "with", "about", 
+    "against", "between", "into",  "during", "above", "below", "to",
+    "from", "up", "down", "in", "out", "on", "off", "then", "once", 
+    "here", "there", "when", "where", "all", "any", "both", "each",
+    "most", "other", "some", "such", "no", "nor", "not", "only", "own",
+    "same", "so", "than", "too", "very", "can", "will", "just", "don't", 
+    "should", "now"
+}
+
 line_index = 0
 
 # check if datasets/target.txt does not exist
@@ -17,7 +35,7 @@ if not os.path.exists('datasets/target.txt') or True:
     with open('datasets/wikisent2.txt', 'r') as preprocessed_data, open('datasets/target.txt', 'w') as t, open('datasets/scrambled.txt', 'w') as f:
 
             for line in preprocessed_data:
-                if line_index % 400 == 0:
+                if line_index % 100 == 0:
                     words = line.split()
 
                     # remove stopwords from the sentence
@@ -25,11 +43,14 @@ if not os.path.exists('datasets/target.txt') or True:
 
                     # reshuffle the word 20% of the time
                     for i, word in enumerate(words):
-                        if random.random() < 0.09:
+                        if random.random() < 0.29:
                             synsets = wn.synsets(word)
                             if synsets:
-                                words[i] = synsets[0].lemmas()[0].name()
-                        elif random.random() < 0.09:
+                                # only replace if the synset is longer than the word
+                                synset = synsets[0]
+                                if len(synset.lemmas()[0].name()) > len(word):
+                                    words[i] = synset.lemmas()[0].name()
+                        elif random.random() < 0.14:
                             # shuffle the word
                             j = random.randint(0, len(words) - 1)
                             words[i], words[j] = words[j], words[i]
