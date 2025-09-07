@@ -9,6 +9,8 @@ with open("paraphrased-text/msr_paraphrase_test.txt", "r") as file, open(
     index_prompt = headers.index("#1 String")
     index_generated = headers.index("#2 String")
 
+
+    # loop through line and index in file
     for line in file:
         # Split each line on tabs
         columns = line.strip().split("\t")

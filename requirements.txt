@@ -1,0 +1,29 @@
+# Core ML/DL frameworks
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+
+# Transformers and NLP libraries
+transformers>=4.30.0
+tokenizers>=0.13.0
+huggingface-hub>=0.15.0
+
+# Natural Language Processing
+nltk>=3.8.0
+rouge-score>=0.1.2
+bert-score>=0.3.13
+
+# Data processing and utilities
+numpy>=1.24.0
+tqdm>=4.65.0
+scipy>=1.10.0
+
+# Optional: For better performance
+accelerate>=0.20.0
+datasets>=2.12.0
+
+# Development and testing (optional)
+pytest>=7.0.0
+jupyter>=1.0.0
+matplotlib>=3.7.0
+seaborn>=0.12.0

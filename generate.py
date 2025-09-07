@@ -14,20 +14,19 @@ import random
 import torch
 
 default_gen = True
-make_longer_gen = True
+make_longer_gen = False
 
-model_type = "model1"
+model_type = "model_custom_first"
+
+gen_destination_folder = "gen-outputs/"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 model = GPT2LMHeadModel.from_pretrained(model_type).to(device)
 tokenizer = GPT2Tokenizer.from_pretrained(model_type)
 
-# prompt_dest = 'paraphrased-text/prompts.txt'
-# generated_dest = 'paraphrased-text/generated.txt'
-
-prompt_dest = 'gen-outputs/prompts.txt'
-generated_dest = 'gen-outputs/generated.txt'
+prompt_dest = gen_destination_folder + 'prompts.txt'
+generated_dest = gen_destination_folder + 'generated_default_default.txt'
 
 def generate(prompt):
     model.eval()
@@ -70,28 +69,32 @@ def generate(prompt):
         scaled_prob_tensor = torch.zeros(top_k)
 
         # set the scaled_prob_tensor to the probability of the top_k tokens
-        for i in range(top_k):
-            new_prob = probs[top_k_tokens_indexes[i]]
-            num_letters = len(tokenizer.decode(top_k_tokens_indexes[i].unsqueeze(0), skip_special_tokens=True))
-            if make_longer_gen:
-                scaled_prob_tensor[i] = new_prob * (1 + length_factor * num_letters)
-            else:
-                scaled_prob_tensor[i] = new_prob * (1 - length_factor * num_letters)
-            # scale the stop token too
-            if top_k_tokens_indexes[i] == 50256:
-                scaled_prob_tensor[i] = new_prob * (1 - length_factor * 4)
+        # for i in range(top_k):
+        #     token_index = top_k_tokens_indexes[i]
+        #     new_prob = probs[token_index]
+        #     token_str = tokenizer.decode(token_index.unsqueeze(0), skip_special_tokens=True)
+        #     num_letters = len(token_str)
+            # if make_longer_gen:
+            #     scaled_prob_tensor[i] = new_prob * (1 + length_factor * num_letters)
+            #     if top_k_tokens_indexes[i] == 50256:
+            #         scaled_prob_tensor[i] = new_prob * (1 + length_factor)
         
         # randomly sample from the top_k tokens with temperature implementation
         scaled_prob_tensor = scaled_prob_tensor / temperature
         scaled_prob_tensor = torch.nn.functional.softmax(scaled_prob_tensor, dim=-1)
-        next_token_id = top_k_tokens_indexes[torch.multinomial(scaled_prob_tensor, num_samples=2)]
+        # loop through scaled_prob_tensor and print the probability of each token
+        for i in range(top_k):
+            token_index = top_k_tokens_indexes[i]
+            token_str = tokenizer.decode(token_index.unsqueeze(0), skip_special_tokens=True)
+            if not make_longer_gen and len(token_str) > 5:
+                # Scale down probabilities for tokens longer than 5 characters
+                scaled_prob_tensor[i] *= (0.95**len(token_str))
+            if make_longer_gen and len(token_str) > 5:
+                # Scale up probabilities for tokens longer than 5 characters
+                scaled_prob_tensor[i] *= (1.05**len(token_str))
+        next_token_id = top_k_tokens_indexes[torch.multinomial(scaled_prob_tensor, num_samples=1)]
 
-        if generated_output.shape[1] > 0 and next_token_id[0] == generated_output[0, -1] and next_token_id[1] != 50256:
-            next_token = next_token_id[1]
-            return next_token.unsqueeze(0).unsqueeze(0)
-
-        next_token = next_token_id[0]
-        return next_token.unsqueeze(0).unsqueeze(0)
+        return next_token_id.unsqueeze(0)
 
     if default_gen:
         generated_output = model.generate(
@@ -120,16 +123,63 @@ def generate(prompt):
                 if i == max_length - 1:
                     break
 
-    return tokenizer.decode(generated_output[0], skip_special_tokens=True)
+    if len(generated_output[0] > 0):
+        return tokenizer.decode(generated_output[0], skip_special_tokens=True)
+    else:
+        return "No output"
 
-with open(prompt_dest, 'r') as prompts, open(generated_dest, 'w') as generated:
-    for prompt in prompts:
-        prompt = prompt.strip()
-        if prompt:
-            generated_line = generate(prompt)
-            index_token_delimiter = generated_line.find(token_delimiter)
-            print("PROMPT:", generated_line[len(token_start):index_token_delimiter])
-            print("GENERATED:", generated_line[index_token_delimiter + len(token_delimiter):])
-            generated.write(generated_line[index_token_delimiter + len(token_delimiter):] + '\n')
+def gen():
+    with open(prompt_dest, 'r') as prompts, open(generated_dest, 'w') as generated:
+        for prompt in prompts:
+            prompt = prompt.strip()
+            if prompt:
+                generated_line = generate(prompt)
+                index_token_delimiter = generated_line.find(token_delimiter)
+                print("PROMPT:", generated_line[len(token_start):index_token_delimiter])
+                print("GENERATED:", generated_line[index_token_delimiter + len(token_delimiter):])
+                line_generated = generated_line[index_token_delimiter + len(token_delimiter):]
+                # remove all new line characters '\n' in line_generated
+                line_generated = line_generated.replace('\n', ' ')
+                generated.write(line_generated + '\n')
+
+# gen()
+
+default_gen = False
+make_longer_gen = True
+model_type = "model_custom_first"
+generated_dest = gen_destination_folder + 'generated_first_genTrue.txt'
+gen()
+                
+# print("FINSHED ONE FILE")
+
+# default_gen = False
+# make_longer_gen = True
+# model_type = "model_custom_second"
+# generated_dest = gen_destination_folder + 'generated_second_genTrue.txt'
+# gen()
+
+# print("FINSHED ONE FILE")
+
+# default_gen = False
+# make_longer_gen = False
+# model_type = "model_default"
+# generated_dest = gen_destination_folder + 'generated_default_genFalse.txt'
+# gen()
+
+# print("FINSHED ONE FILE")
+
+default_gen = False
+make_longer_gen = False
+model_type = "model_custom_first"
+generated_dest = gen_destination_folder + 'generated_first_genFalse.txt'
+gen()
+
+# print("FINSHED ONE FILE")
+
+# default_gen = False
+# make_longer_gen = False
+# model_type = "model_custom_second"
+# generated_dest = gen_destination_folder + 'generated_second_genFalse.txt'
+# gen()
 
 print("Done generating!")
